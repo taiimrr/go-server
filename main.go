@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi"
 )
 func formHandler(w http.ResponseWriter,r *http.Request){
 	if err := r.ParseForm(); err != nil {
@@ -32,15 +34,28 @@ func helloHandler(w http.ResponseWriter,r *http.Request){
 
 func main(){
 	fileServer := http.FileServer(http.Dir("./static"))
-	http.Handle("/", fileServer)
-	http.HandleFunc("/form", formHandler)
-	http.HandleFunc("/hello",helloHandler)
+	router := chi.NewRouter()
 
-	fmt.Printf("Starting Server at port 8000\n")
+	router.Handle("/*", http.StripPrefix("/", fileServer))	
+	router.Get("/hello", helloHandler)
+	router.Post("/form", formHandler)
+	
+	srv := &http.Server{
+		Handler: router,
+		Addr: ":8000",
+	}
 
-	if err := http.ListenAndServe(":8000",nil); err != nil{
+	log.Printf("Server runnin on port %v", 8000)
+	
+
+	err := srv.ListenAndServe()
+	if err != nil {
 		log.Fatal(err)
-	} 
+	}
+
+	
+
+
 
 
 }
